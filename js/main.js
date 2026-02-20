@@ -70,7 +70,7 @@ Vue.component('task', {
      </small>
      
      <small v-if="task.status === 'Выполненные задачи'">
-        <span v-if="task.isOverdue"">Выполнено с опозданием</span>
+        <span v-if="task.isOverdue">Выполнено с опозданием</span>
         <span v-else>Выполнено в срок</span>
     </small>
 
