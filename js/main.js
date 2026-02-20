@@ -20,7 +20,8 @@ Vue.component('task', {
                 this.$emit('edit-task', this.task.id, {
                     title: this.editTitle.trim(),
                     description: this.editDescription.trim(),
-                    deadline: this.editDeadline
+                    deadline: this.editDeadline,
+                    updatedAt: new Date().toISOString()
                 });
                 this.editing = false;
             }
@@ -46,9 +47,14 @@ Vue.component('task', {
 <div class="task" draggable="true" @dragstart="onDragStart">
   <div v-if="!editing">
     <h4>{{ task.title }}</h4>
-    <p>{{ task.description || 'Без описания' }}</p>
-    <small>Создано: {{ formattedDate(task.createdAt) }}</small><br />
-    <small>Дедлайн: {{ task.deadline ? formattedDate(task.deadline) : 'не указан' }}</small>
+    <p>{{ task.description || 'Задача без описания' }}</p>
+    <small><strong>Создано:</strong> {{ formattedDate(task.createdAt) }}</small><br />
+    <small><strong>Дедлайн:</strong> {{ task.deadline ? formattedDate(task.deadline) : 'не указан' }}</small>
+    <small v-if="task.updatedAt"><strong>Отредактировано:</strong> {{ formattedDate(task.updatedAt) }}</small><br>
+   
+     <small v-if="task.returnReason" class="return-reason">
+        <strong>Причина возврата:</strong> {{ task.returnReason }}
+     </small>
 
     <template v-if="isEditable">
     <div class="btns">
@@ -140,7 +146,12 @@ new Vue({
     data: {
         statuses: ['Запланированные задачи', 'Задачи в работе', 'Тестирование', 'Выполненные задачи'],
         tasks: [],
-        nextId: 4
+        nextId: 4,
+        returnReasonModal: {
+            visible: false,
+            taskId: null,
+            reason: ''
+        }
     },
     created() {
         const savedTasks = localStorage.getItem('kanban-tasks');
@@ -185,11 +196,55 @@ new Vue({
         deleteTask(id) {
             this.tasks = this.tasks.filter(t => t.id !== id);
         },
+
         onDropTask({ id, newStatus }) {
             const task = this.tasks.find(t => t.id === id);
-            if (task && task.status !== newStatus) {
-                task.status = newStatus;
+            if (!task) return;
+
+            const currentIndex = this.statuses.indexOf(task.status);
+            const newIndex = this.statuses.indexOf(newStatus);
+
+            if (currentIndex === 2) {
+                if (newIndex === 3) {
+                    task.status = newStatus;
+                } else if (newIndex === 1) {
+                    this.showReturnReasonModal(id);
+                } else {
+                }
+            } else {
+                if (newIndex === currentIndex + 1) {
+                    task.status = newStatus;
+                }
             }
+        },
+
+        showReturnReasonModal(taskId) {
+            this.returnReasonModal.visible = true;
+            this.returnReasonModal.taskId = taskId;
+            this.returnReasonModal.reason = '';
+        },
+
+        confirmReturnTask() {
+            const { taskId, reason } = this.returnReasonModal;
+            if (!reason.trim()) {
+                alert('Пожалуйста, укажите причину возврата');
+                return;
+            }
+            const task = this.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = this.statuses[1];
+                Vue.set(task, 'returnReason', reason.trim());
+                Vue.set(task, 'updatedAt', new Date().toISOString());
+            }
+            this.returnReasonModal.visible = false;
+            this.returnReasonModal.taskId = null;
+            this.returnReasonModal.reason = '';
+        },
+
+        cancelReturnTask() {
+            this.returnReasonModal.visible = false;
+            this.returnReasonModal.taskId = null;
+            this.returnReasonModal.reason = '';
         }
     }
 });
