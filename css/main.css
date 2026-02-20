@@ -33,7 +33,7 @@ body {
     color: #333333;
 }
 
-button, input {
+button, input, textarea {
     width: fit-content;
     padding: 0.5em;
     border-radius: 1.5em;
@@ -42,7 +42,7 @@ button, input {
     color: #333333;
 }
 
-.task-container {
+.task-container, .task {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -61,4 +61,11 @@ button, input {
     background: #8aa88a;
     padding: 0.5em;
     border-radius: 1.5em;
+}
+
+.btns {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    justify-content: center;
 }

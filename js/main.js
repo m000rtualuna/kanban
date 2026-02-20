@@ -1,10 +1,11 @@
-
 Vue.component('task', {
     props: ['task', 'isEditable'],
     data() {
         return {
             editing: false,
-            editTitle: this.task.title
+            editTitle: this.task.title,
+            editDescription: this.task.description,
+            editDeadline: this.task.deadline
         };
     },
     methods: {
@@ -16,7 +17,11 @@ Vue.component('task', {
         },
         saveEdit() {
             if (this.editTitle.trim()) {
-                this.$emit('edit-task', this.task.id, this.editTitle.trim());
+                this.$emit('edit-task', this.task.id, {
+                    title: this.editTitle.trim(),
+                    description: this.editDescription.trim(),
+                    deadline: this.editDeadline
+                });
                 this.editing = false;
             }
         },
@@ -30,23 +35,41 @@ Vue.component('task', {
         onDragStart(event) {
             event.dataTransfer.setData('text/plain', this.task.id);
             event.dataTransfer.effectAllowed = "move";
-        }
+        },
+        formattedDate(dateString) {
+            if (!dateString) return '';
+            const d = new Date(dateString);
+            return d.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
+        },
     },
     template: `
-    <div class="task" draggable="true" @dragstart="onDragStart">
-      <div class="task-container" v-if="!editing">
-        <span>{{ task.title }}</span>
-        <template v-if="isEditable">
+<div class="task" draggable="true" @dragstart="onDragStart">
+  <div v-if="!editing">
+    <h4>{{ task.title }}</h4>
+    <p>{{ task.description || 'Без описания' }}</p>
+    <small>Создано: {{ formattedDate(task.createdAt) }}</small><br />
+    <small>Дедлайн: {{ task.deadline ? formattedDate(task.deadline) : 'не указан' }}</small>
+
+    <template v-if="isEditable">
+    <div class="btns">
           <button @click="startEdit">Редактировать</button>
-          <button @click="deleteTask">Удалить</button>
-        </template>
-      </div>
-      <div v-else>
-        <input v-model="editTitle" @keyup.enter="saveEdit" />
+      <button @click="deleteTask">Удалить</button>
+    </div>
+    </template>
+  </div>
+
+  <div class="task-edit" v-else>
+    <input v-model="editTitle" placeholder="Заголовок" />
+    <textarea v-model="editDescription" placeholder="Описание"></textarea>
+    <input type="date" v-model="editDeadline" />
+
+    <div class="btns">
         <button @click="saveEdit">Сохранить</button>
         <button @click="cancelEdit">Отмена</button>
-      </div>
-    </div>
+</div>
+
+  </div>
+</div>
   `
 });
 
@@ -54,16 +77,23 @@ Vue.component('column', {
     props: ['status', 'tasks', 'isFirst'],
     data() {
         return {
-            newTaskTitle: ''
+            newTaskTitle: '',
+            newTaskDescription: '',
+            newTaskDeadline: ''
         };
     },
     methods: {
         addTask() {
             const title = this.newTaskTitle.trim();
-            if (title) {
-                this.$emit('add-task', title);
+            if (!title) return
+                this.$emit('add-task', {
+                    title,
+                    description: this.newTaskDescription.trim(),
+                    deadline: this.newTaskDeadline || null
+                });
                 this.newTaskTitle = '';
-            }
+                this.newTaskDescription = '';
+                this.newTaskDeadline = '';
         },
         onDrop(event) {
             event.preventDefault();
@@ -86,11 +116,13 @@ Vue.component('column', {
     <div class="column" @dragover="onDragOver" @drop="onDrop">
       <h3>{{ status }}</h3>
 
-      <div v-if="isFirst" class="add-task">
-        <input v-model="newTaskTitle" placeholder="Новая задача" @keyup.enter="addTask" />
-        <button @click="addTask">Добавить</button>
-      </div>
-
+     <div v-if="isFirst" class="add-task">
+          <input v-model="newTaskTitle" placeholder="Заголовок задачи" />
+          <textarea v-model="newTaskDescription" placeholder="Описание задачи"></textarea>
+          <input type="date" v-model="newTaskDeadline" />
+          <button @click="addTask">Добавить</button>
+    </div>
+    
       <task 
         v-for="task in tasks" 
         :key="task.id" 
@@ -107,28 +139,47 @@ new Vue({
     el: '#app',
     data: {
         statuses: ['Запланированные задачи', 'Задачи в работе', 'Тестирование', 'Выполненные задачи'],
-        tasks: [
-            { id: 1, title: 'Задача 1', status: 'To Do' },
-            { id: 2, title: 'Задача 2', status: 'In Progress' },
-            { id: 3, title: 'Задача 3', status: 'Review' }
-        ],
+        tasks: [],
         nextId: 4
+    },
+    created() {
+        const savedTasks = localStorage.getItem('kanban-tasks');
+        if (savedTasks) {
+            this.tasks = JSON.parse(savedTasks);
+
+            if (this.tasks.length) {
+                this.nextId = Math.max(...this.tasks.map(t => t.id)) + 1;
+            }
+        }
+    },
+    watch: {
+        tasks: {
+            handler(newTasks) {
+                localStorage.setItem('kanban-tasks', JSON.stringify(newTasks));
+            },
+            deep: true
+        }
     },
     methods: {
         filteredTasks(status) {
             return this.tasks.filter(t => t.status === status);
         },
-        addTask(title) {
+        addTask({ title, description, deadline }) {
+            const now = new Date().toISOString();
+
             this.tasks.push({
                 id: this.nextId++,
                 title,
+                description,
+                deadline,
+                createdAt: now,
                 status: this.statuses[0]
             });
         },
-        editTask(id, newTitle) {
+        editTask(id, updatedFields) {
             const task = this.tasks.find(t => t.id === id);
             if (task) {
-                task.title = newTitle;
+                Object.assign(task, updatedFields);
             }
         },
         deleteTask(id) {
