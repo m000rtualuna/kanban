@@ -1,5 +1,7 @@
 Vue.component('task', {
-    props: ['task', 'isEditable'],
+
+    props: ['task', 'isEditable', 'status'],
+
     data() {
         return {
             editing: false,
@@ -8,6 +10,7 @@ Vue.component('task', {
             editDeadline: this.task.deadline
         };
     },
+
     methods: {
         startEdit() {
             if (this.isEditable) {
@@ -15,6 +18,7 @@ Vue.component('task', {
                 this.editTitle = this.task.title;
             }
         },
+
         saveEdit() {
             if (this.editTitle.trim()) {
                 this.$emit('edit-task', this.task.id, {
@@ -26,25 +30,34 @@ Vue.component('task', {
                 this.editing = false;
             }
         },
+
         cancelEdit() {
             this.editing = false;
             this.editTitle = this.task.title;
         },
+
         deleteTask() {
             if (this.isEditable) this.$emit('delete-task', this.task.id);
         },
+
         onDragStart(event) {
+            if (this.editing) {
+                event.preventDefault();
+                return;
+            }
             event.dataTransfer.setData('text/plain', this.task.id);
             event.dataTransfer.effectAllowed = "move";
         },
+
         formattedDate(dateString) {
             if (!dateString) return '';
             const d = new Date(dateString);
             return d.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
         },
     },
+
     template: `
-<div class="task" draggable="true" @dragstart="onDragStart">
+<div class="task" :draggable="!editing" @dragstart="onDragStart">
   <div v-if="!editing">
     <h4>{{ task.title }}</h4>
     <p>{{ task.description || 'Задача без описания' }}</p>
@@ -64,7 +77,7 @@ Vue.component('task', {
     <template v-if="isEditable">
     <div class="btns">
           <button @click="startEdit">Редактировать</button>
-      <button @click="deleteTask">Удалить</button>
+      <button v-if="isEditable && !(status === 'Задачи в работе' || status === 'Тестирование')" @click="deleteTask">Удалить</button>
     </div>
     </template>
   </div>
@@ -84,6 +97,7 @@ Vue.component('task', {
   `
 });
 
+
 Vue.component('column', {
     props: ['status', 'tasks', 'isFirst'],
     data() {
@@ -93,19 +107,43 @@ Vue.component('column', {
             newTaskDeadline: ''
         };
     },
+
+    computed: {
+        isEditable() {
+            return ['Запланированные задачи', 'Задачи в работе', 'Тестирование'].includes(this.status);
+        }
+    },
+
     methods: {
         addTask() {
             const title = this.newTaskTitle.trim();
-            if (!title) return
-                this.$emit('add-task', {
-                    title,
-                    description: this.newTaskDescription.trim(),
-                    deadline: this.newTaskDeadline || null
-                });
-                this.newTaskTitle = '';
-                this.newTaskDescription = '';
-                this.newTaskDeadline = '';
+            const description = this.newTaskDescription.trim();
+            const deadline = this.newTaskDeadline.trim();
+
+            if (!title) {
+                alert('Пожалуйста, введите заголовок задачи');
+                return;
+            }
+            if (!description) {
+                alert('Пожалуйста, введите описание задачи');
+                return;
+            }
+            if (!deadline) {
+                alert('Пожалуйста, укажите дедлайн');
+                return;
+            }
+
+            this.$emit('add-task', {
+                title,
+                description,
+                deadline
+            });
+
+            this.newTaskTitle = '';
+            this.newTaskDescription = '';
+            this.newTaskDeadline = '';
         },
+
         onDrop(event) {
             event.preventDefault();
             const taskId = event.dataTransfer.getData('text/plain');
@@ -113,16 +151,22 @@ Vue.component('column', {
                 this.$emit('drop-task', { id: parseInt(taskId), newStatus: this.status });
             }
         },
+
         onDragOver(event) {
             event.preventDefault();
         },
-        editTask(id, title) {
-            this.$emit('edit-task', id, title);
+
+        editTask(id, updatedFields) {
+            this.$emit('edit-task', id, updatedFields);
         },
-        deleteTask(id) {
-            this.$emit('delete-task', id);
+
+        deleteTask() {
+            if (this.isEditable && !(this.status === 'Задачи в работе' || this.status === 'Тестирование')) {
+                this.$emit('delete-task', this.task.id);
+            }
         }
     },
+
     template: `
     <div class="column" @dragover="onDragOver" @drop="onDrop">
       <h3>{{ status }}</h3>
@@ -135,16 +179,18 @@ Vue.component('column', {
     </div>
     
       <task 
-        v-for="task in tasks" 
-        :key="task.id" 
-        :task="task" 
-        :isEditable="isFirst" 
-        @edit-task="editTask" 
-        @delete-task="deleteTask"
-      ></task>
+  v-for="task in tasks" 
+  :key="task.id" 
+  :task="task" 
+  :isEditable="isEditable" 
+  :status="task.status"
+  @edit-task="editTask" 
+  @delete-task="deleteTask"
+/>
     </div>
   `
 });
+
 
 new Vue({
     el: '#app',
@@ -158,6 +204,7 @@ new Vue({
             reason: ''
         }
     },
+
     created() {
         const savedTasks = localStorage.getItem('kanban-tasks');
         if (savedTasks) {
@@ -168,6 +215,7 @@ new Vue({
             }
         }
     },
+
     watch: {
         tasks: {
             handler(newTasks) {
@@ -176,14 +224,16 @@ new Vue({
             deep: true
         }
     },
+
     methods: {
         filteredTasks(status) {
             return this.tasks.filter(t => t.status === status);
         },
+
         addTask({ title, description, deadline }) {
             const now = new Date().toISOString();
 
-            this.tasks.push({
+            this.tasks.unshift({
                 id: this.nextId++,
                 title,
                 description,
@@ -192,12 +242,14 @@ new Vue({
                 status: this.statuses[0]
             });
         },
+
         editTask(id, updatedFields) {
             const task = this.tasks.find(t => t.id === id);
             if (task) {
                 Object.assign(task, updatedFields);
             }
         },
+
         deleteTask(id) {
             this.tasks = this.tasks.filter(t => t.id !== id);
         },
