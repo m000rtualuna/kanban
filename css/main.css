@@ -5,7 +5,7 @@
 }
 
 body {
-    background: #9fc3a0;
+    background: #8aa88a;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -24,19 +24,22 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 1em;
-    border: black solid 2px;
-    border-radius: 0.5em;
+    border: #fff solid 1px;
+    border-radius: 2em;
     padding: 2em;
     width: 15em;
     text-align: center;
+    background: #bad8ba;
+    color: #333333;
 }
 
 button, input {
     width: fit-content;
     padding: 0.5em;
-    border-radius: 0.5em;
+    border-radius: 1.5em;
     border: none;
     background: #d5d5d5;
+    color: #333333;
 }
 
 .task-container {
@@ -46,15 +49,16 @@ button, input {
     gap: 1em;
     background: #8aa88a;
     padding: 0.5em;
-    border-radius: 0.5em;
+    border-radius: 1.5em;
+    width: 100%;
 }
 
-.add-task {
+.add-task, .task-edit {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5em;
     background: #8aa88a;
     padding: 0.5em;
-    border-radius: 0.5em;
+    border-radius: 1.5em;
 }
