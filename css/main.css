@@ -2,6 +2,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-family: 'Times New Roman', Times, serif;
+    color: #333333;
 }
 
 body {
@@ -39,7 +41,6 @@ body {
     max-width: 100%;
     text-align: center;
     background: #bad8ba;
-    color: #333333;
     flex-shrink: 0;
 }
 
@@ -49,7 +50,6 @@ button, input, textarea {
     border-radius: 1.5em;
     border: none;
     background: #d5d5d5;
-    color: #333333;
 }
 
 .task-container, .task {

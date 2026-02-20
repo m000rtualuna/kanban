@@ -185,8 +185,7 @@ Vue.component('column', {
   :isEditable="isEditable" 
   :status="task.status"
   @edit-task="editTask" 
-  @delete-task="deleteTask"
-/>
+  @delete-task="deleteTask"/>
     </div>
   `
 });
