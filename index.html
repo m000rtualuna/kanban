@@ -13,11 +13,21 @@
 <body>
 
 <div id="app">
-
-    <h2>Канбан-доска</h2>
     <div class="board">
-        <column @add-task="addTask" @edit-task="editTask"></column>
+        <column
+                v-for="status in statuses"
+                :key="status"
+                :status="status"
+                :tasks="filteredTasks(status)"
+                :is-first="status === statuses[0]"
+                @drop-task="onDropTask"
+                @add-task="addTask"
+                @edit-task="editTask"
+                @delete-task="deleteTask"
+        ></column>
     </div>
 </div>
+
+
 </body>
 </html>
