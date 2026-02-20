@@ -5,18 +5,26 @@
 }
 
 body {
+    height: 100%;
+    min-height: 100vh;
     background: #8aa88a;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+body {
+    padding: 3em;
 }
 
 .board {
     width: 100%;
+    max-width: 1000px;
     display: flex;
     justify-content: space-around;
-    gap: 5em;
+    gap: 1em;
 }
 
 .column {
@@ -28,9 +36,11 @@ body {
     border-radius: 2em;
     padding: 2em;
     width: 15em;
+    max-width: 100%;
     text-align: center;
     background: #bad8ba;
     color: #333333;
+    flex-shrink: 0;
 }
 
 button, input, textarea {
@@ -51,6 +61,8 @@ button, input, textarea {
     padding: 0.5em;
     border-radius: 1.5em;
     width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
 }
 
 .add-task, .task-edit {
@@ -61,6 +73,7 @@ button, input, textarea {
     background: #8aa88a;
     padding: 0.5em;
     border-radius: 1.5em;
+    box-sizing: border-box;
 }
 
 .btns {
@@ -68,4 +81,35 @@ button, input, textarea {
     gap: 0.5em;
     flex-wrap: wrap;
     justify-content: center;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: #8aa88a;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    max-width: 90vw;
+    box-sizing: border-box;
+}
+
+.modal textarea {
+    width: 100%;
+    height: 80px;
+    margin: 10px 0;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.modal .btns button {
+    margin-right: 10px;
 }

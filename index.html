@@ -13,6 +13,7 @@
 <body>
 
 <div id="app">
+
     <div class="board">
         <column
                 v-for="status in statuses"
@@ -25,6 +26,17 @@
                 @edit-task="editTask"
                 @delete-task="deleteTask"
         ></column>
+    </div>
+
+    <div v-if="returnReasonModal.visible" class="modal-overlay">
+        <div class="modal">
+            <h3>Укажите причину возврата задачи во второй столбец</h3>
+            <textarea v-model="returnReasonModal.reason" placeholder="Причина возврата"></textarea>
+            <div class="btns">
+                <button @click="confirmReturnTask">Подтвердить</button>
+                <button @click="cancelReturnTask">Отмена</button>
+            </div>
+        </div>
     </div>
 </div>
 

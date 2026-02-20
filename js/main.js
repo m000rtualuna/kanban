@@ -48,13 +48,18 @@ Vue.component('task', {
   <div v-if="!editing">
     <h4>{{ task.title }}</h4>
     <p>{{ task.description || 'Задача без описания' }}</p>
-    <small><strong>Создано:</strong> {{ formattedDate(task.createdAt) }}</small><br />
+    <small><strong>Задача поставлена:</strong> {{ formattedDate(task.createdAt) }}</small><br />
     <small><strong>Дедлайн:</strong> {{ task.deadline ? formattedDate(task.deadline) : 'не указан' }}</small>
     <small v-if="task.updatedAt"><strong>Отредактировано:</strong> {{ formattedDate(task.updatedAt) }}</small><br>
    
      <small v-if="task.returnReason" class="return-reason">
         <strong>Причина возврата:</strong> {{ task.returnReason }}
      </small>
+     
+     <small v-if="task.status === 'Выполненные задачи'">
+        <span v-if="task.isOverdue"">Выполнено с опозданием</span>
+        <span v-else>Выполнено в срок</span>
+    </small>
 
     <template v-if="isEditable">
     <div class="btns">
@@ -207,9 +212,27 @@ new Vue({
             if (currentIndex === 2) {
                 if (newIndex === 3) {
                     task.status = newStatus;
+
+                    if (task.deadline) {
+                        const deadlineDate = new Date(task.deadline);
+                        const now = new Date();
+
+                        if (deadlineDate < now) {
+                            Vue.set(task, 'isOverdue', true);
+                            Vue.set(task, 'completedOnTime', false);
+                        } else {
+                            Vue.set(task, 'isOverdue', false);
+                            Vue.set(task, 'completedOnTime', true);
+                        }
+                    } else {
+                        Vue.set(task, 'isOverdue', false);
+                        Vue.set(task, 'completedOnTime', true);
+                    }
+
+                    Vue.set(task, 'completedAt', new Date().toISOString());
+
                 } else if (newIndex === 1) {
                     this.showReturnReasonModal(id);
-                } else {
                 }
             } else {
                 if (newIndex === currentIndex + 1) {
