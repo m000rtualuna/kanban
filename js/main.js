@@ -111,6 +111,9 @@ Vue.component('column', {
     computed: {
         isEditable() {
             return ['Запланированные задачи', 'Задачи в работе', 'Тестирование'].includes(this.status);
+        },
+        overdueCount() {
+            return this.tasks.filter(task => task.isOverdue).length;
         }
     },
 
@@ -169,12 +172,14 @@ Vue.component('column', {
 
     template: `
     <div class="column" @dragover="onDragOver" @drop="onDrop">
-      <h3>{{ status }}</h3>
+      <h3>{{ status }} <span v-if="overdueCount > 0">(просрочено: {{ overdueCount }})</span></h3>
 
      <div v-if="isFirst" class="add-task">
           <input v-model="newTaskTitle" placeholder="Заголовок задачи" />
           <textarea v-model="newTaskDescription" placeholder="Описание задачи"></textarea>
-          <input type="date" v-model="newTaskDeadline" />
+            <label> Дедлайн:
+            <input type="date" v-model="newTaskDeadline" />
+            </label>
           <button @click="addTask">Добавить</button>
     </div>
     
